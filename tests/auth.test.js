@@ -124,3 +124,4 @@ describe('Auth Endpoints Integration Tests', () => {
     });
   });
 });
+

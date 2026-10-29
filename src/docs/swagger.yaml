@@ -268,3 +268,4 @@ paths:
           description: Lead not found
         '401':
           description: Unauthorized
+

@@ -38,3 +38,4 @@ const authenticate = asyncHandler(async (req, res, next) => {
 });
 
 module.exports = { authenticate };
+

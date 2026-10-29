@@ -18,3 +18,4 @@ router.use('/auth', authRoutes);
 router.use('/leads', leadRoutes);
 
 module.exports = router;
+

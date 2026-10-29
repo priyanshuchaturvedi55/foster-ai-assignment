@@ -36,3 +36,4 @@ module.exports = {
   registerSchema,
   loginSchema
 };
+

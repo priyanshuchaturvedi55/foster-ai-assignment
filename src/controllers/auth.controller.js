@@ -23,3 +23,4 @@ module.exports = {
   login,
   getMe
 };
+
