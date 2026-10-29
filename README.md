@@ -150,8 +150,8 @@ if (!claimedLead) {
 
 ### 2. Installation
 ```bash
-git clone <repository_url>
-cd foster-crm-backend
+git clone https://github.com/priyanshuchaturvedi55/foster-ai-assignment.git
+cd foster-ai-assignment
 npm install
 ```
 
@@ -251,5 +251,5 @@ npm test
 ---
 
 ## 👤 Author
-Developed for the **Foster.ai Backend Developer Assignment (Final Round)**.
+Developed by **Priyanshu Chaturvedi** for the **Foster.ai Backend Developer Assignment (Final Round)**.
 
