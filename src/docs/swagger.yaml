@@ -1,0 +1,270 @@
+openapi: 3.0.0
+info:
+  title: Foster.ai CRM Backend REST API
+  version: 1.0.0
+  description: |
+    Production-ready Customer Relationship Management (CRM) REST API for educational counselors and prospective student leads.
+    Engineered with Node.js, Express, MongoDB (Mongoose), and JWT authentication.
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Local Development Server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserRegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: Priya Sharma
+        email:
+          type: string
+          format: email
+          example: priya.sharma@foster.ai
+        password:
+          type: string
+          format: password
+          example: SecureP@ssw0rd!
+        role:
+          type: string
+          enum: [counselor, admin]
+          default: counselor
+          example: counselor
+
+    UserLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: priya.sharma@foster.ai
+        password:
+          type: string
+          format: password
+          example: SecureP@ssw0rd!
+
+    PublicEnquiryRequest:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+        - courseInterest
+      properties:
+        name:
+          type: string
+          example: Rohit Verma
+        email:
+          type: string
+          format: email
+          example: rohit.verma@example.com
+        phone:
+          type: string
+          example: "+919876543210"
+        courseInterest:
+          type: string
+          example: Full Stack Web Development
+        message:
+          type: string
+          example: Interested in the upcoming weekend batch.
+        source:
+          type: string
+          enum: [online_form, counselor_link, direct_call, referral, other]
+          example: online_form
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Operation completed successfully
+        data:
+          type: object
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns operational status and server uptime
+      responses:
+        '200':
+          description: Service is healthy
+
+  /auth/register:
+    post:
+      summary: Register employee / counselor
+      description: Creates a new counselor account and returns a JWT Bearer token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+      responses:
+        '201':
+          description: Counselor registered successfully
+        '400':
+          description: Validation error
+        '409':
+          description: Email already in use
+
+  /auth/login:
+    post:
+      summary: Employee login
+      description: Authenticates counselor credentials and returns a JWT Bearer token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid email or password
+
+  /auth/me:
+    get:
+      summary: Get logged-in counselor profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+        '401':
+          description: Unauthorized
+
+  /leads/public-enquiry:
+    post:
+      summary: Submit public enquiry form (Zero-auth)
+      description: Publicly accessible endpoint for prospective students to submit course enquiries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicEnquiryRequest'
+      responses:
+        '201':
+          description: Enquiry captured successfully
+        '400':
+          description: Validation error
+        '429':
+          description: Rate limit exceeded
+
+  /leads/unclaimed:
+    get:
+      summary: Fetch unclaimed public enquiries
+      description: Returns all unclaimed enquiries visible to counselors in the CRM pool
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: courseInterest
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of unclaimed public enquiries
+        '401':
+          description: Unauthorized
+
+  /leads/claimed:
+    get:
+      summary: Fetch leads claimed by logged-in counselor
+      description: Returns private enquiries claimed by the requesting counselor
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of claimed private enquiries
+        '401':
+          description: Unauthorized
+
+  /leads/{id}/claim:
+    patch:
+      summary: Claim an enquiry (Atomic & Concurrency-Safe)
+      description: Exclusively assigns the enquiry to the logged-in counselor and removes it from the public queue
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lead successfully claimed
+        '404':
+          description: Lead not found
+        '409':
+          description: Lead has already been claimed by another counselor
+        '401':
+          description: Unauthorized
+
+  /leads/{id}:
+    get:
+      summary: Get lead details by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lead details
+        '403':
+          description: Forbidden (Claimed by another counselor)
+        '404':
+          description: Lead not found
+        '401':
+          description: Unauthorized
